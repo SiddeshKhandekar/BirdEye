@@ -3,8 +3,8 @@
 > **Note:** This file serves as the living status report for the BirdEye project. It is updated every time we make changes and finish a module or significant task.
 
 ## Current Overall Status
-🟢 **Phase:** Module 1: Infrastructure Foundation (**COMPLETED**)
-**Progress:** 1 / 5 Modules Completed
+🟢 **Phase:** Module 2: Map & Citizen MVP (**COMPLETED**)
+**Progress:** 2 / 5 Modules Completed
 
 ---
 
@@ -12,19 +12,19 @@
 
 ### Module 1: Infrastructure Foundation
 **Status: ✅ COMPLETED** *(2026-09-07)*
-- [x] `.gitignore` — protects API keys (Stadia Maps, OpenAI), env files, build artifacts
-- [x] `.env.example` — template for Supabase URL, Stadia Maps key, OpenAI key
-- [x] FastAPI AI service scaffolded (`main.py`, agents, tools, Pydantic schemas)
-- [x] Step-by-step setup guide for Supabase + Stadia Maps (`docs/SETUP_GUIDE.md`)
-- [x] **Architecture updated:** Moved entirely to Supabase (Database, Auth, API, RLS).
+- [x] `.gitignore`, `.env` (gitignored), Supabase setup, FastAPI scaffold
+- [x] Database schema (`db/init-postgis.sql`) with RLS policies
+- [x] Setup guide (`docs/SETUP_GUIDE.md`)
 
 ### Module 2: Map & Citizen MVP (Frontend)
-**Status: ⏳ Not Started**
-- [ ] Initialize Next.js app with Tailwind CSS
-- [ ] Implement full-screen Stadia Maps canvas with geolocation
-- [ ] Create issue markers, pins, and clustering logic
-- [ ] Build Citizen Report Modal (photo, category, anon shield)
-- [ ] Connect Supabase API to submit issues
+**Status: ✅ COMPLETED** *(2026-09-07)*
+- [x] Next.js 16 app scaffolded (TypeScript, Tailwind, App Router)
+- [x] Supabase client (`src/lib/supabase.ts`)
+- [x] Full design token CSS system (PRD §4.1 compliant)
+- [x] `MapCanvas.tsx` — Full-screen Leaflet map with Stadia Maps tiles + geolocation
+- [x] `ReportModal.tsx` — Category, title, photo upload, anonymity shield, GPS
+- [x] `HomeClient.tsx` — Search bar, filter chips, report button, nearby issues bar
+- [x] Build passes ✅
 
 ### Module 3: AI Pipeline (Backend)
 **Status: ⏳ Not Started**
@@ -51,8 +51,9 @@
 
 | Date | Module | Change Description |
 |---|---|---|
-| 2026-09-07 | Module 1 | Created `.gitignore`, `.env.example`, FastAPI scaffold |
-| 2026-09-07 | Module 1 | **Removed Directus** — switched completely to Supabase. `.env` and setup guides updated. RLS added to `init-postgis.sql`. |
+| 2026-09-07 | Module 1 | Created `.gitignore`, `.env`, FastAPI scaffold, Supabase setup |
+| 2026-09-07 | Module 1 | Switched from Directus to Supabase. Added RLS to schema. |
+| 2026-09-07 | Module 2 | Built Next.js 16 frontend: MapCanvas (Leaflet + Stadia), ReportModal, HomeClient. Build passes. |
 
 ---
 
