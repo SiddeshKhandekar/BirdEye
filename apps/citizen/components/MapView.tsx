@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { Issue, mockClusters, userLocation, mapCenter, mapZoom } from '@/lib/mock-data';
 import { MapControls } from './MapControls';
 import { IssuePreviewCard } from './IssuePreviewCard';
@@ -31,11 +30,59 @@ export function MapView({
 
   const stadiaApiKey = process.env.NEXT_PUBLIC_STADIA_API_KEY || 'b6777717-81e7-40dd-95c8-e03afeb0a829';
 
-  const getMapStyle = useCallback((satellite: boolean) => {
-    return satellite
-      ? `https://tiles.stadiamaps.com/styles/alidade_satellite.json?api_key=${stadiaApiKey}`
-      : `https://tiles.stadiamaps.com/styles/alidade_smooth.json?api_key=${stadiaApiKey}`;
-  }, [stadiaApiKey]);
+  // Build Stadia Maps style (using direct retina @2x tiles for fast and 100% reliable rendering)
+  const getMapStyle = useCallback(
+    (satellite: boolean): maplibregl.StyleSpecification => {
+      if (satellite) {
+        return {
+          version: 8,
+          sources: {
+            'stadia-satellite': {
+              type: 'raster',
+              tiles: [
+                `https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}@2x.jpg?api_key=${stadiaApiKey}`,
+              ],
+              tileSize: 256,
+              attribution: '&copy; Stadia Maps &copy; OpenStreetMap',
+            },
+          },
+          layers: [
+            {
+              id: 'stadia-satellite-layer',
+              type: 'raster',
+              source: 'stadia-satellite',
+              minzoom: 0,
+              maxzoom: 20,
+            },
+          ],
+        };
+      }
+
+      return {
+        version: 8,
+        sources: {
+          'stadia-smooth': {
+            type: 'raster',
+            tiles: [
+              `https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}@2x.png?api_key=${stadiaApiKey}`,
+            ],
+            tileSize: 256,
+            attribution: '&copy; Stadia Maps &copy; OpenStreetMap',
+          },
+        },
+        layers: [
+          {
+            id: 'stadia-smooth-layer',
+            type: 'raster',
+            source: 'stadia-smooth',
+            minzoom: 0,
+            maxzoom: 20,
+          },
+        ],
+      };
+    },
+    [stadiaApiKey]
+  );
 
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
@@ -51,7 +98,13 @@ export function MapView({
 
       mapInstance.on('load', () => {
         setMapLoaded(true);
+        mapInstance.resize();
       });
+
+      // Force resize after short delay to handle parent layout rendering
+      setTimeout(() => {
+        mapInstance.resize();
+      }, 200);
 
       mapInstance.on('click', () => {
         onMapClick();
@@ -59,7 +112,7 @@ export function MapView({
 
       map.current = mapInstance;
     } catch (e) {
-      console.warn('MapLibre initialization error:', e);
+      console.warn('MapLibre initialization warning:', e);
       setMapLoaded(true);
     }
 
@@ -70,6 +123,15 @@ export function MapView({
       }
     };
   }, [getMapStyle, isSatellite, onMapClick]);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      map.current?.resize();
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Toggle satellite style
   const toggleSatellite = () => {
@@ -93,7 +155,7 @@ export function MapView({
       const el = document.createElement('div');
       el.className = 'relative flex items-center justify-center';
       el.innerHTML = `
-        <div class="absolute w-8 h-8 rounded-full bg-blue-400/30 animate-pulse-ring"></div>
+        <div class="absolute w-8 h-8 rounded-full bg-blue-400/40 animate-pulse-ring pointer-events-none"></div>
         <div class="relative w-4 h-4 rounded-full bg-blue-600 border-2 border-white shadow-md"></div>
       `;
 
@@ -159,7 +221,6 @@ export function MapView({
         iconSvg = '⚙';
       }
 
-      // Teardrop pin SVG
       el.innerHTML = `
         <div style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.25));" class="flex flex-col items-center">
           <div style="background-color: ${pinColor}; width: 32px; height: 32px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff;">
@@ -195,7 +256,11 @@ export function MapView({
 
   return (
     <div className="relative w-full h-[calc(100vh-64px)] mt-16 bg-[#F7F8F5] overflow-hidden">
-      <div ref={mapContainer} className="absolute inset-0 z-0" />
+      <div
+        ref={mapContainer}
+        style={{ width: '100%', height: '100%' }}
+        className="absolute inset-0 z-0"
+      />
 
       {/* Floating Map Controls */}
       <MapControls
