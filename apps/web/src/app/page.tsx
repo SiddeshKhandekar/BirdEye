@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+export const dynamic = 'force-dynamic';
+
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 
 // Dynamically import MapCanvas to avoid SSR issues with Leaflet
