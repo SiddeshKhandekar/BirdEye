@@ -1,69 +1,86 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect, useState, useRef } from 'react';
+import dynamic from 'next/dynamic';
+
+// Dynamically import MapCanvas to avoid SSR issues with Leaflet
+const MapCanvas = dynamic(() => import('@/components/map/MapCanvas'), { ssr: false });
+
+import ReportModal from '@/components/citizen/ReportModal';
+
+const CATEGORIES = [
+  { key: 'all', label: 'All', color: '#55B360' },
+  { key: 'pothole', label: 'Potholes', color: '#E53935', icon: '🕳️' },
+  { key: 'garbage', label: 'Garbage', color: '#F59E0B', icon: '🗑️' },
+  { key: 'streetlights', label: 'Streetlights', color: '#8B5CF6', icon: '💡' },
+  { key: 'water', label: 'Water', color: '#3B82F6', icon: '💧' },
+];
 
 export default function Home() {
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [issueCount, setIssueCount] = useState({ total: 0, pothole: 0, garbage: 0, streetlights: 0, water: 0, other: 0 });
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="map-container">
+      {/* --- Floating Search Bar --- */}
+      <div className="search-bar">
+        <svg width="18" height="18" fill="none" stroke="#6b7c85" strokeWidth="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Search for location, area or issue..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </div>
+
+      {/* --- Category Filter Chips --- */}
+      <div className="filter-chips">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.key}
+            className={`chip ${activeFilter === cat.key ? 'active' : ''}`}
+            onClick={() => setActiveFilter(cat.key)}
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {cat.icon && <span>{cat.icon}</span>}
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* --- Report Issue Button --- */}
+      <button className="report-btn" onClick={() => setShowReportModal(true)}>
+        <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        Report Issue
+      </button>
+
+      {/* --- Full-Screen Map --- */}
+      <MapCanvas
+        activeFilter={activeFilter}
+        onIssueCountChange={setIssueCount}
+      />
+
+      {/* --- Nearby Issues Bottom Bar --- */}
+      <div className="nearby-bar">
+        <span className="count">{issueCount.total} issues nearby</span>
+        <div className="categories">
+          <span className="cat-item"><span className="dot" style={{ background: '#E53935' }}></span> Potholes {issueCount.pothole}</span>
+          <span className="cat-item"><span className="dot" style={{ background: '#F59E0B' }}></span> Garbage {issueCount.garbage}</span>
+          <span className="cat-item"><span className="dot" style={{ background: '#8B5CF6' }}></span> Lights {issueCount.streetlights}</span>
+          <span className="cat-item"><span className="dot" style={{ background: '#6b7c85' }}></span> Other {issueCount.other}</span>
         </div>
-      </main>
-    </div>
+        <svg width="16" height="16" fill="none" stroke="#6b7c85" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
+      </div>
+
+      {/* --- Report Modal --- */}
+      {showReportModal && (
+        <ReportModal onClose={() => setShowReportModal(false)} />
+      )}
+    </main>
   );
 }
