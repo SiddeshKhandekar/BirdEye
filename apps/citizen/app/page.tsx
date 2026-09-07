@@ -1,10 +1,25 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { TopBar } from "@/components/TopBar";
 import { LeftSidebar } from "@/components/LeftSidebar";
-import { MapView } from "@/components/MapView";
 import RightPanel from "@/components/RightPanel";
+
+const MapView = dynamic(
+  () => import("@/components/MapView").then((mod) => mod.MapView),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="relative w-full h-[calc(100vh-64px)] mt-16 bg-[#F7F8F5] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-[#55B360] border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-sm font-medium text-[#7A7A7A]">Loading BirdEye Map...</span>
+        </div>
+      </div>
+    ),
+  }
+);
 import NearbyIssuesPanel from "@/components/NearbyIssuesPanel";
 import { BottomStatsBar } from "@/components/BottomStatsBar";
 import ReportIssueModal from "@/components/ReportIssueModal";
